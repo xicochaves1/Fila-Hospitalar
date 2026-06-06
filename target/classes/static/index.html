@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FilaFácil — Sistema de Atendimento</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f5f7fa;
+    color: #1a1a2e;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 40px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2563eb;
+    letter-spacing: -0.3px;
+  }
+  .logo span { color: #1a1a2e; font-weight: 300; }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #94a3b8;
+  }
+  .status-dot.on { background: #22c55e; }
+
+  /* CHAMADA ATUAL */
+  .chamada-bar {
+    background: #2563eb;
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 80px;
+  }
+
+  .chamada-item {
+    text-align: center;
+  }
+  .chamada-item label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 4px;
+  }
+  .chamada-item .valor {
+    font-size: 2.4rem;
+    font-weight: 300;
+    color: #ffffff;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .chamada-item .valor.destaque {
+    font-weight: 600;
+    font-size: 2.8rem;
+  }
+
+  .sep { width: 1px; height: 50px; background: rgba(255,255,255,0.2); }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 0;
+    height: calc(100vh - 136px);
+  }
+
+  /* FILA */
+  .fila-section {
+    padding: 28px 32px;
+    overflow-y: auto;
+    border-right: 1px solid #e2e8f0;
+    background: #ffffff;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 16px;
+  }
+
+  .fila-lista { display: flex; flex-direction: column; gap: 6px; }
+
+  .fila-item {
+    display: grid;
+    grid-template-columns: 32px 1fr auto auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fila-item:hover {
+    border-color: #bfdbfe;
+    box-shadow: 0 1px 8px rgba(37,99,235,0.06);
+  }
+
+  .pos {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .item-info .nome {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1a1a2e;
+  }
+  .item-info .esp {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    margin-top: 1px;
+  }
+
+  .item-senha {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2563eb;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .badge {
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .badge-EMERGENCIA { background: #fee2e2; color: #dc2626; }
+  .badge-URGENTE    { background: #fef3c7; color: #d97706; }
+  .badge-PRIORITARIO{ background: #ede9fe; color: #7c3aed; }
+  .badge-NORMAL     { background: #dbeafe; color: #2563eb; }
+
+  .fila-vazia {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+    font-size: 0.88rem;
+  }
+  .fila-vazia svg { margin-bottom: 12px; opacity: 0.3; }
+
+  /* PAINEL DIREITO */
+  .painel { background: #f8fafc; display: flex; flex-direction: column; overflow-y: auto; }
+
+  /* STATS */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .stat {
+    padding: 18px 20px;
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+  }
+  .stat:nth-child(2) { border-right: none; }
+  .stat:nth-child(3) { border-bottom: none; }
+  .stat:nth-child(4) { border-right: none; border-bottom: none; }
+
+  .stat-num {
+    font-size: 1.9rem;
+    font-weight: 600;
+    line-height: 1;
+    color: #2563eb;
+  }
+  .stat-num.verde { color: #16a34a; }
+  .stat-num.cinza { color: #94a3b8; }
+  .stat-label {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+
+  /* FORMS */
+  .form-section { padding: 20px; border-bottom: 1px solid #e2e8f0; }
+
+  .form-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 14px;
+  }
+
+  .field { margin-bottom: 10px; }
+  .field label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 4px;
+  }
+  .field input,
+  .field select {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    color: #1a1a2e;
+    background: #ffffff;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .field input:focus,
+  .field select:focus { border-color: #2563eb; }
+
+  .btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-blue { background: #2563eb; color: #ffffff; }
+  .btn-blue:hover { background: #1d4ed8; }
+  .btn-outline {
+    background: #ffffff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    margin-top: 6px;
+  }
+  .btn-outline:hover { background: #eff6ff; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2563eb;
+    border-radius: 8px;
+    padding: 14px 18px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    z-index: 999;
+    animation: toastIn 0.25s ease;
+    min-width: 220px;
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .toast-titulo { font-size: 0.72rem; color: #64748b; margin-bottom: 3px; }
+  .toast-senha { font-size: 1.5rem; font-weight: 700; color: #2563eb; }
+  .toast-nome { font-size: 0.82rem; color: #1a1a2e; margin-top: 2px; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Fila<span>Fácil</span></div>
+  <div class="header-right">
+    <span id="relogio">--:--:--</span>
+    <div class="status-badge">
+      <div class="status-dot" id="wsDot"></div>
+      <span id="wsLabel">Conectando...</span>
+    </div>
+  </div>
+</header>
+
+<!-- CHAMADA ATUAL -->
+<div class="chamada-bar">
+  <div class="chamada-item">
+    <label>Senha chamada</label>
+    <div class="valor destaque" id="senhaAtual">—</div>
+  </div>
+  <div class="sep"></div>
+  <div class="chamada-item">
+    <label>Guichê</label>
+    <div class="valor" id="guicheAtual">—</div>
+  </div>
+  <div class="sep"></div>
+  <div class="chamada-item">
+    <label>Aguardando</label>
+    <div class="valor" id="totalAguardando">0</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- FILA -->
+  <div class="fila-section">
+    <div class="section-label">Fila em espera</div>
+    <div class="fila-lista" id="filaLista">
+      <div class="fila-vazia">
+        <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+        </svg>
+        <div>Nenhum paciente aguardando</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL DIREITO -->
+  <div class="painel">
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num" id="statAguardando">0</div>
+        <div class="stat-label">Aguardando</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num verde" id="statAtendendo">0</div>
+        <div class="stat-label">Em atendimento</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num cinza" id="statAtendidos">0</div>
+        <div class="stat-label">Atendidos</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num cinza" id="statTempo">—</div>
+        <div class="stat-label">Min. espera</div>
+      </div>
+    </div>
+
+    <!-- CHECK-IN -->
+    <div class="form-section">
+      <div class="form-title">Novo check-in</div>
+      <div class="field">
+        <label>Nome do paciente</label>
+        <input type="text" id="inputNome" placeholder="Nome completo">
+      </div>
+      <div class="field">
+        <label>CPF (opcional)</label>
+        <input type="text" id="inputCpf" placeholder="000.000.000-00">
+      </div>
+      <div class="field">
+        <label>Prioridade</label>
+        <select id="inputPrioridade">
+          <option value="NORMAL">Normal</option>
+          <option value="PRIORITARIO">Prioritário (idoso / grávida)</option>
+          <option value="URGENTE">Urgente</option>
+          <option value="EMERGENCIA">Emergência</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Especialidade</label>
+        <select id="inputEspecialidade">
+          <option>Clínico Geral</option>
+          <option>Ortopedia</option>
+          <option>Pediatria</option>
+          <option>Cardiologia</option>
+          <option>Emergência</option>
+        </select>
+      </div>
+      <button class="btn btn-blue" onclick="realizarCheckin()">Entrar na fila</button>
+    </div>
+
+    <!-- CHAMAR PRÓXIMO -->
+    <div class="form-section">
+      <div class="form-title">Chamar próximo</div>
+      <div class="field">
+        <label>Guichê</label>
+        <input type="text" id="inputGuiche" placeholder="Ex: Guichê 01" value="Guichê 01">
+      </div>
+      <div class="field">
+        <label>Especialidade (opcional)</label>
+        <select id="inputEspChamar">
+          <option value="">Todos</option>
+          <option>Clínico Geral</option>
+          <option>Ortopedia</option>
+          <option>Pediatria</option>
+          <option>Cardiologia</option>
+          <option>Emergência</option>
+        </select>
+      </div>
+      <button class="btn btn-blue" onclick="chamarProximo()">Chamar próximo</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8080/api';
+let stompClient = null;
+
+// Relógio
+function tick() {
+  document.getElementById('relogio').textContent =
+    new Date().toLocaleTimeString('pt-BR');
+}
+setInterval(tick, 1000); tick();
+
+// WebSocket
+function conectar() {
+  const socket = new SockJS('http://localhost:8080/ws-fila');
+  stompClient = Stomp.over(socket);
+  stompClient.debug = null;
+  stompClient.connect({}, () => {
+    document.getElementById('wsDot').classList.add('on');
+    document.getElementById('wsLabel').textContent = 'Conectado';
+    stompClient.subscribe('/topic/fila', msg => {
+      const data = JSON.parse(msg.body);
+      if (data.evento === 'CHAMAR') {
+        document.getElementById('senhaAtual').textContent = data.senha || '—';
+        document.getElementById('guicheAtual').textContent = data.guiche || '—';
+        tocarAlerta();
+      }
+      document.getElementById('totalAguardando').textContent = data.totalAguardando ?? 0;
+      carregarFila();
+      carregarStats();
+    });
+    carregarFila();
+    carregarStats();
+  }, () => {
+    document.getElementById('wsDot').classList.remove('on');
+    document.getElementById('wsLabel').textContent = 'Desconectado';
+    setTimeout(conectar, 3000);
+  });
+}
+
+async function carregarFila() {
+  try {
+    const res = await fetch(`${API}/fila`);
+    renderFila(await res.json());
+  } catch { renderFila([]); }
+}
+
+async function carregarStats() {
+  try {
+    const res = await fetch(`${API}/fila/estatisticas`);
+    const s = await res.json();
+    document.getElementById('statAguardando').textContent = s.aguardando ?? 0;
+    document.getElementById('statAtendendo').textContent  = s.emAtendimento ?? 0;
+    document.getElementById('statAtendidos').textContent  = s.atendidos ?? 0;
+    document.getElementById('statTempo').textContent      = s.tempoMedioEsperaMinutos ?? '—';
+  } catch {}
+}
+
+async function realizarCheckin() {
+  const nome = document.getElementById('inputNome').value.trim();
+  if (!nome) { alert('Informe o nome do paciente'); return; }
+  const payload = {
+    nomePaciente: nome,
+    cpf: document.getElementById('inputCpf').value.trim() || null,
+    prioridade: document.getElementById('inputPrioridade').value,
+    especialidade: document.getElementById('inputEspecialidade').value,
+  };
+  try {
+    const res = await fetch(`${API}/fila/checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    mostrarToast(nome, data.senha, payload.prioridade);
+    document.getElementById('inputNome').value = '';
+    document.getElementById('inputCpf').value = '';
+  } catch {
+    const p = payload.prioridade;
+    const pref = {NORMAL:'N',PRIORITARIO:'P',URGENTE:'U',EMERGENCIA:'E'}[p];
+    mostrarToast(nome, pref + String(Math.floor(Math.random()*900)+100), p);
+  }
+}
+
+async function chamarProximo() {
+  const guiche = document.getElementById('inputGuiche').value.trim();
+  if (!guiche) { alert('Informe o guichê'); return; }
+  const payload = { guiche, especialidade: document.getElementById('inputEspChamar').value || null };
+  try {
+    const res = await fetch(`${API}/fila/chamar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 204) { alert('Fila vazia!'); return; }
+    const data = await res.json();
+    document.getElementById('senhaAtual').textContent = data.senha;
+    document.getElementById('guicheAtual').textContent = guiche;
+  } catch {}
+}
+
+function renderFila(fila) {
+  const lista = document.getElementById('filaLista');
+  document.getElementById('totalAguardando').textContent = fila.length;
+  if (!fila.length) {
+    lista.innerHTML = `<div class="fila-vazia">
+      <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+      </svg>
+      <div>Nenhum paciente aguardando</div></div>`;
+    return;
+  }
+  lista.innerHTML = fila.map((item, i) => {
+    const entrada = item.dataEntrada ? new Date(item.dataEntrada) : new Date();
+    const min = Math.floor((Date.now() - entrada.getTime()) / 60000);
+    const tempo = min < 1 ? 'agora' : `${min} min`;
+    const nome = item.paciente?.nome || '—';
+    const labels = {EMERGENCIA:'EMERG',URGENTE:'URG',PRIORITARIO:'PRIOR',NORMAL:'NORMAL'};
+    return `<div class="fila-item">
+      <div class="pos">${i+1}</div>
+      <div class="item-info">
+        <div class="nome">${nome}</div>
+        <div class="esp">${item.especialidade || 'Clínico Geral'} · ${tempo}</div>
+      </div>
+      <div class="item-senha">${item.senha}</div>
+      <div class="badge badge-${item.prioridade}">${labels[item.prioridade]||item.prioridade}</div>
+    </div>`;
+  }).join('');
+}
+
+function mostrarToast(nome, senha, prioridade) {
+  document.querySelector('.toast')?.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `
+    <div class="toast-titulo">Check-in realizado</div>
+    <div class="toast-senha">${senha}</div>
+    <div class="toast-nome">${nome}</div>`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 5000);
+}
+
+function tocarAlerta() {
+  try {
+    const ctx = new AudioContext();
+    [880, 1100].forEach((f, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(0.1, ctx.currentTime + i*0.18);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.18 + 0.3);
+      o.start(ctx.currentTime + i*0.18);
+      o.stop(ctx.currentTime + i*0.18 + 0.3);
+    });
+  } catch {}
+}
+
+conectar();
+setInterval(() => { carregarFila(); carregarStats(); }, 15000);
+</script>
+</body>
+</html>

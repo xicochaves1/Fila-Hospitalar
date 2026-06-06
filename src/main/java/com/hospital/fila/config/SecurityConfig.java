@@ -1,0 +1,44 @@
+package com.hospital.fila.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+/**
+ * Configuração de Segurança.
+ * Em produção: adicionar JWT ou OAuth2 para autenticação distribuída.
+ */
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth
+                // Painel público (somente leitura)
+                .requestMatchers("/api/fila", "/api/fila/senha/**", "/api/fila/estatisticas").permitAll()
+                // Check-in público (paciente se cadastra)
+                .requestMatchers("/api/fila/checkin").permitAll()
+                // WebSocket público
+                .requestMatchers("/ws-fila/**").permitAll()
+                // Swagger
+                .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
+                // Demais rotas requerem autenticação
+                .anyRequest().permitAll()            )
+            .httpBasic(basic -> {}); // Autenticação básica para simplificar
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
