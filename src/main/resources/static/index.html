@@ -2,10 +2,8 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FilaFácil — Sistema de Atendimento</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>FilaFácil</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,293 +15,204 @@
     min-height: 100vh;
   }
 
-  /* HEADER */
   header {
-    background: #ffffff;
+    background: #fff;
     border-bottom: 1px solid #e2e8f0;
-    padding: 0 40px;
-    height: 60px;
+    padding: 0 20px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
 
-  .logo {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #2563eb;
-    letter-spacing: -0.3px;
-  }
+  .logo { font-size: 1.2rem; font-weight: 600; color: #2563eb; }
   .logo span { color: #1a1a2e; font-weight: 300; }
 
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    font-size: 0.8rem;
-    color: #64748b;
-  }
-
-  .status-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-  }
-  .status-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: #94a3b8;
-  }
-  .status-dot.on { background: #22c55e; }
+  .header-right { display: flex; align-items: center; gap: 12px; font-size: 0.75rem; color: #64748b; }
+  .status-badge { display: flex; align-items: center; gap: 5px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
 
   /* CHAMADA ATUAL */
   .chamada-bar {
     background: #2563eb;
-    padding: 20px 40px;
+    padding: 16px 20px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 80px;
+    justify-content: space-around;
+    gap: 8px;
   }
-
-  .chamada-item {
-    text-align: center;
-  }
+  .chamada-item { text-align: center; flex: 1; }
   .chamada-item label {
     display: block;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 500;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255,255,255,0.65);
     margin-bottom: 4px;
   }
   .chamada-item .valor {
-    font-size: 2.4rem;
-    font-weight: 300;
-    color: #ffffff;
-    letter-spacing: -1px;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #fff;
     line-height: 1;
   }
-  .chamada-item .valor.destaque {
-    font-weight: 600;
-    font-size: 2.8rem;
-  }
+  .sep { width: 1px; height: 40px; background: rgba(255,255,255,0.2); }
 
-  .sep { width: 1px; height: 50px; background: rgba(255,255,255,0.2); }
-
-  /* MAIN LAYOUT */
-  .main {
+  /* STATS */
+  .stats-grid {
     display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 0;
-    height: calc(100vh - 136px);
+    grid-template-columns: repeat(4, 1fr);
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
   }
-
-  /* FILA */
-  .fila-section {
-    padding: 28px 32px;
-    overflow-y: auto;
+  .stat {
+    padding: 14px 12px;
     border-right: 1px solid #e2e8f0;
-    background: #ffffff;
-  }
-
-  .section-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #94a3b8;
-    margin-bottom: 16px;
-  }
-
-  .fila-lista { display: flex; flex-direction: column; gap: 6px; }
-
-  .fila-item {
-    display: grid;
-    grid-template-columns: 32px 1fr auto auto;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #ffffff;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    animation: fadeIn 0.3s ease;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .fila-item:hover {
-    border-color: #bfdbfe;
-    box-shadow: 0 1px 8px rgba(37,99,235,0.06);
-  }
-
-  .pos {
-    font-size: 0.75rem;
-    color: #94a3b8;
-    font-weight: 500;
     text-align: center;
   }
+  .stat:last-child { border-right: none; }
+  .stat-num { font-size: 1.5rem; font-weight: 600; color: #2563eb; line-height: 1; }
+  .stat-num.verde { color: #16a34a; }
+  .stat-num.cinza { color: #94a3b8; }
+  .stat-label { font-size: 0.6rem; color: #94a3b8; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
 
-  .item-info .nome {
-    font-size: 0.9rem;
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 56px;
+    z-index: 99;
+  }
+  .tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    font-size: 0.8rem;
     font-weight: 500;
-    color: #1a1a2e;
-  }
-  .item-info .esp {
-    font-size: 0.72rem;
     color: #94a3b8;
-    margin-top: 1px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
   }
+  .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
 
-  .item-senha {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #2563eb;
-    font-variant-numeric: tabular-nums;
+  /* CONTENT */
+  .content { padding: 16px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* FILA */
+  .fila-lista { display: flex; flex-direction: column; gap: 8px; }
+  .fila-item {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    animation: fadeIn 0.3s ease;
   }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .pos { font-size: 0.72rem; color: #94a3b8; font-weight: 500; text-align: center; }
+  .item-nome { font-size: 0.88rem; font-weight: 500; color: #1a1a2e; }
+  .item-esp { font-size: 0.7rem; color: #94a3b8; margin-top: 1px; }
+  .item-right { text-align: right; }
+  .item-senha { font-size: 0.95rem; font-weight: 700; color: #2563eb; }
 
   .badge {
-    font-size: 0.62rem;
+    display: inline-block;
+    font-size: 0.58rem;
     font-weight: 600;
-    padding: 2px 8px;
+    padding: 2px 7px;
     border-radius: 4px;
-    letter-spacing: 0.05em;
     text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
   }
   .badge-EMERGENCIA { background: #fee2e2; color: #dc2626; }
   .badge-URGENTE    { background: #fef3c7; color: #d97706; }
   .badge-PRIORITARIO{ background: #ede9fe; color: #7c3aed; }
   .badge-NORMAL     { background: #dbeafe; color: #2563eb; }
 
-  .fila-vazia {
-    text-align: center;
-    padding: 60px 20px;
-    color: #94a3b8;
-    font-size: 0.88rem;
-  }
-  .fila-vazia svg { margin-bottom: 12px; opacity: 0.3; }
-
-  /* PAINEL DIREITO */
-  .painel { background: #f8fafc; display: flex; flex-direction: column; overflow-y: auto; }
-
-  /* STATS */
-  .stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border-bottom: 1px solid #e2e8f0;
-  }
-  .stat {
-    padding: 18px 20px;
-    border-right: 1px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
-    background: #ffffff;
-  }
-  .stat:nth-child(2) { border-right: none; }
-  .stat:nth-child(3) { border-bottom: none; }
-  .stat:nth-child(4) { border-right: none; border-bottom: none; }
-
-  .stat-num {
-    font-size: 1.9rem;
-    font-weight: 600;
-    line-height: 1;
-    color: #2563eb;
-  }
-  .stat-num.verde { color: #16a34a; }
-  .stat-num.cinza { color: #94a3b8; }
-  .stat-label {
-    font-size: 0.68rem;
-    color: #94a3b8;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 4px;
-  }
+  .fila-vazia { text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 0.85rem; }
 
   /* FORMS */
-  .form-section { padding: 20px; border-bottom: 1px solid #e2e8f0; }
-
-  .form-title {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #1a1a2e;
-    margin-bottom: 14px;
+  .form-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
   }
-
+  .form-title { font-size: 0.9rem; font-weight: 600; color: #1a1a2e; margin-bottom: 14px; }
   .field { margin-bottom: 10px; }
   .field label {
     display: block;
-    font-size: 0.68rem;
-    font-weight: 500;
+    font-size: 0.65rem;
+    font-weight: 600;
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.07em;
     margin-bottom: 4px;
   }
-  .field input,
-  .field select {
+  .field input, .field select {
     width: 100%;
-    padding: 9px 11px;
+    padding: 10px 12px;
     border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
     font-family: 'Inter', sans-serif;
     color: #1a1a2e;
-    background: #ffffff;
-    transition: border-color 0.2s;
+    background: #fff;
+    -webkit-appearance: none;
     outline: none;
   }
-  .field input:focus,
-  .field select:focus { border-color: #2563eb; }
+  .field input:focus, .field select:focus { border-color: #2563eb; }
 
   .btn {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
   }
-  .btn-blue { background: #2563eb; color: #ffffff; }
-  .btn-blue:hover { background: #1d4ed8; }
-  .btn-outline {
-    background: #ffffff;
-    color: #2563eb;
-    border: 1px solid #bfdbfe;
-    margin-top: 6px;
-  }
-  .btn-outline:hover { background: #eff6ff; }
+  .btn-blue { background: #2563eb; color: #fff; }
+  .btn-blue:hover, .btn-blue:active { background: #1d4ed8; }
 
   /* TOAST */
   .toast {
     position: fixed;
-    bottom: 24px; right: 24px;
-    background: #ffffff;
+    bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #fff;
     border: 1px solid #e2e8f0;
     border-left: 4px solid #2563eb;
-    border-radius: 8px;
-    padding: 14px 18px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
     z-index: 999;
     animation: toastIn 0.25s ease;
-    min-width: 220px;
+    min-width: 240px;
+    text-align: center;
   }
-  @keyframes toastIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .toast-titulo { font-size: 0.72rem; color: #64748b; margin-bottom: 3px; }
-  .toast-senha { font-size: 1.5rem; font-weight: 700; color: #2563eb; }
-  .toast-nome { font-size: 0.82rem; color: #1a1a2e; margin-top: 2px; }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  .toast-titulo { font-size: 0.7rem; color: #64748b; margin-bottom: 2px; }
+  .toast-senha { font-size: 1.8rem; font-weight: 700; color: #2563eb; }
+  .toast-nome { font-size: 0.82rem; color: #1a1a2e; }
 
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar { width: 3px; }
   ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
 </style>
 </head>
@@ -312,24 +221,23 @@
 <header>
   <div class="logo">Fila<span>Fácil</span></div>
   <div class="header-right">
-    <span id="relogio">--:--:--</span>
+    <span id="relogio">--:--</span>
     <div class="status-badge">
-      <div class="status-dot" id="wsDot"></div>
-      <span id="wsLabel">Conectando...</span>
+      <div class="status-dot"></div>
+      <span>Online</span>
     </div>
   </div>
 </header>
 
-<!-- CHAMADA ATUAL -->
 <div class="chamada-bar">
   <div class="chamada-item">
-    <label>Senha chamada</label>
-    <div class="valor destaque" id="senhaAtual">—</div>
+    <label>Senha</label>
+    <div class="valor" id="senhaAtual">—</div>
   </div>
   <div class="sep"></div>
   <div class="chamada-item">
     <label>Guichê</label>
-    <div class="valor" id="guicheAtual">—</div>
+    <div class="valor" id="guicheAtual" style="font-size:1.4rem">—</div>
   </div>
   <div class="sep"></div>
   <div class="chamada-item">
@@ -338,45 +246,42 @@
   </div>
 </div>
 
-<div class="main">
+<div class="stats-grid">
+  <div class="stat">
+    <div class="stat-num" id="statAguardando">0</div>
+    <div class="stat-label">Espera</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num verde" id="statAtendendo">0</div>
+    <div class="stat-label">Atend.</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num cinza" id="statAtendidos">0</div>
+    <div class="stat-label">Feitos</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num cinza" id="statTempo">—</div>
+    <div class="stat-label">Min.</div>
+  </div>
+</div>
 
+<div class="tabs">
+  <div class="tab active" onclick="showTab('fila')">🏥 Fila</div>
+  <div class="tab" onclick="showTab('checkin')">➕ Check-in</div>
+  <div class="tab" onclick="showTab('chamar')">📢 Chamar</div>
+</div>
+
+<div class="content">
   <!-- FILA -->
-  <div class="fila-section">
-    <div class="section-label">Fila em espera</div>
+  <div class="tab-panel active" id="tab-fila">
     <div class="fila-lista" id="filaLista">
-      <div class="fila-vazia">
-        <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
-        </svg>
-        <div>Nenhum paciente aguardando</div>
-      </div>
+      <div class="fila-vazia">Nenhum paciente aguardando</div>
     </div>
   </div>
 
-  <!-- PAINEL DIREITO -->
-  <div class="painel">
-
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-num" id="statAguardando">0</div>
-        <div class="stat-label">Aguardando</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num verde" id="statAtendendo">0</div>
-        <div class="stat-label">Em atendimento</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num cinza" id="statAtendidos">0</div>
-        <div class="stat-label">Atendidos</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num cinza" id="statTempo">—</div>
-        <div class="stat-label">Min. espera</div>
-      </div>
-    </div>
-
-    <!-- CHECK-IN -->
-    <div class="form-section">
+  <!-- CHECK-IN -->
+  <div class="tab-panel" id="tab-checkin">
+    <div class="form-card">
       <div class="form-title">Novo check-in</div>
       <div class="field">
         <label>Nome do paciente</label>
@@ -384,13 +289,13 @@
       </div>
       <div class="field">
         <label>CPF (opcional)</label>
-        <input type="text" id="inputCpf" placeholder="000.000.000-00">
+        <input type="text" id="inputCpf" placeholder="000.000.000-00" inputmode="numeric">
       </div>
       <div class="field">
         <label>Prioridade</label>
         <select id="inputPrioridade">
           <option value="NORMAL">Normal</option>
-          <option value="PRIORITARIO">Prioritário (idoso / grávida)</option>
+          <option value="PRIORITARIO">Prioritário (idoso/grávida)</option>
           <option value="URGENTE">Urgente</option>
           <option value="EMERGENCIA">Emergência</option>
         </select>
@@ -407,9 +312,11 @@
       </div>
       <button class="btn btn-blue" onclick="realizarCheckin()">Entrar na fila</button>
     </div>
+  </div>
 
-    <!-- CHAMAR PRÓXIMO -->
-    <div class="form-section">
+  <!-- CHAMAR PRÓXIMO -->
+  <div class="tab-panel" id="tab-chamar">
+    <div class="form-card">
       <div class="form-title">Chamar próximo</div>
       <div class="field">
         <label>Guichê</label>
@@ -428,66 +335,47 @@
       </div>
       <button class="btn btn-blue" onclick="chamarProximo()">Chamar próximo</button>
     </div>
-
   </div>
 </div>
 
 <script>
-const API = 'http://localhost:8080/api';
-let stompClient = null;
+const API = '';
+
+// Tabs
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['fila','checkin','chamar'][i] === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
 
 // Relógio
-function tick() {
-  document.getElementById('relogio').textContent =
-    new Date().toLocaleTimeString('pt-BR');
-}
-setInterval(tick, 1000); tick();
+setInterval(() => {
+  document.getElementById('relogio').textContent = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+}, 1000);
 
-// WebSocket
-function conectar() {
-  const socket = new SockJS('http://localhost:8080/ws-fila');
-  stompClient = Stomp.over(socket);
-  stompClient.debug = null;
-  stompClient.connect({}, () => {
-    document.getElementById('wsDot').classList.add('on');
-    document.getElementById('wsLabel').textContent = 'Conectado';
-    stompClient.subscribe('/topic/fila', msg => {
-      const data = JSON.parse(msg.body);
-      if (data.evento === 'CHAMAR') {
-        document.getElementById('senhaAtual').textContent = data.senha || '—';
-        document.getElementById('guicheAtual').textContent = data.guiche || '—';
-        tocarAlerta();
-      }
-      document.getElementById('totalAguardando').textContent = data.totalAguardando ?? 0;
-      carregarFila();
-      carregarStats();
-    });
-    carregarFila();
-    carregarStats();
-  }, () => {
-    document.getElementById('wsDot').classList.remove('on');
-    document.getElementById('wsLabel').textContent = 'Desconectado';
-    setTimeout(conectar, 3000);
-  });
-}
-
+// Polling (atualiza a cada 3s)
 async function carregarFila() {
   try {
-    const res = await fetch(`${API}/fila`);
+    const res = await fetch(`${API}/api/fila`);
     renderFila(await res.json());
   } catch { renderFila([]); }
 }
 
 async function carregarStats() {
   try {
-    const res = await fetch(`${API}/fila/estatisticas`);
+    const res = await fetch(`${API}/api/fila/estatisticas`);
     const s = await res.json();
     document.getElementById('statAguardando').textContent = s.aguardando ?? 0;
     document.getElementById('statAtendendo').textContent  = s.emAtendimento ?? 0;
     document.getElementById('statAtendidos').textContent  = s.atendidos ?? 0;
     document.getElementById('statTempo').textContent      = s.tempoMedioEsperaMinutos ?? '—';
+    document.getElementById('totalAguardando').textContent = s.aguardando ?? 0;
   } catch {}
 }
+
+function atualizar() { carregarFila(); carregarStats(); }
+setInterval(atualizar, 3000);
+atualizar();
 
 async function realizarCheckin() {
   const nome = document.getElementById('inputNome').value.trim();
@@ -499,7 +387,7 @@ async function realizarCheckin() {
     especialidade: document.getElementById('inputEspecialidade').value,
   };
   try {
-    const res = await fetch(`${API}/fila/checkin`, {
+    const res = await fetch(`${API}/api/fila/checkin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -508,11 +396,9 @@ async function realizarCheckin() {
     mostrarToast(nome, data.senha, payload.prioridade);
     document.getElementById('inputNome').value = '';
     document.getElementById('inputCpf').value = '';
-  } catch {
-    const p = payload.prioridade;
-    const pref = {NORMAL:'N',PRIORITARIO:'P',URGENTE:'U',EMERGENCIA:'E'}[p];
-    mostrarToast(nome, pref + String(Math.floor(Math.random()*900)+100), p);
-  }
+    showTab('fila');
+    atualizar();
+  } catch(e) { alert('Erro ao fazer check-in: ' + e.message); }
 }
 
 async function chamarProximo() {
@@ -520,7 +406,7 @@ async function chamarProximo() {
   if (!guiche) { alert('Informe o guichê'); return; }
   const payload = { guiche, especialidade: document.getElementById('inputEspChamar').value || null };
   try {
-    const res = await fetch(`${API}/fila/chamar`, {
+    const res = await fetch(`${API}/api/fila/chamar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -529,34 +415,30 @@ async function chamarProximo() {
     const data = await res.json();
     document.getElementById('senhaAtual').textContent = data.senha;
     document.getElementById('guicheAtual').textContent = guiche;
-  } catch {}
+    showTab('fila');
+    atualizar();
+  } catch(e) { alert('Erro: ' + e.message); }
 }
 
 function renderFila(fila) {
   const lista = document.getElementById('filaLista');
-  document.getElementById('totalAguardando').textContent = fila.length;
   if (!fila.length) {
-    lista.innerHTML = `<div class="fila-vazia">
-      <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
-      </svg>
-      <div>Nenhum paciente aguardando</div></div>`;
+    lista.innerHTML = '<div class="fila-vazia">Nenhum paciente aguardando</div>';
     return;
   }
+  const labels = {EMERGENCIA:'EMERG',URGENTE:'URG',PRIORITARIO:'PRIOR',NORMAL:'NORMAL'};
   lista.innerHTML = fila.map((item, i) => {
-    const entrada = item.dataEntrada ? new Date(item.dataEntrada) : new Date();
-    const min = Math.floor((Date.now() - entrada.getTime()) / 60000);
-    const tempo = min < 1 ? 'agora' : `${min} min`;
     const nome = item.paciente?.nome || '—';
-    const labels = {EMERGENCIA:'EMERG',URGENTE:'URG',PRIORITARIO:'PRIOR',NORMAL:'NORMAL'};
     return `<div class="fila-item">
       <div class="pos">${i+1}</div>
-      <div class="item-info">
-        <div class="nome">${nome}</div>
-        <div class="esp">${item.especialidade || 'Clínico Geral'} · ${tempo}</div>
+      <div>
+        <div class="item-nome">${nome}</div>
+        <div class="item-esp">${item.especialidade || 'Clínico Geral'}</div>
       </div>
-      <div class="item-senha">${item.senha}</div>
-      <div class="badge badge-${item.prioridade}">${labels[item.prioridade]||item.prioridade}</div>
+      <div class="item-right">
+        <div class="item-senha">${item.senha}</div>
+        <div class="badge badge-${item.prioridade}">${labels[item.prioridade]||item.prioridade}</div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -565,32 +447,12 @@ function mostrarToast(nome, senha, prioridade) {
   document.querySelector('.toast')?.remove();
   const t = document.createElement('div');
   t.className = 'toast';
-  t.innerHTML = `
-    <div class="toast-titulo">Check-in realizado</div>
+  t.innerHTML = `<div class="toast-titulo">Check-in realizado!</div>
     <div class="toast-senha">${senha}</div>
     <div class="toast-nome">${nome}</div>`;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 5000);
 }
-
-function tocarAlerta() {
-  try {
-    const ctx = new AudioContext();
-    [880, 1100].forEach((f, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.frequency.value = f; o.type = 'sine';
-      g.gain.setValueAtTime(0.1, ctx.currentTime + i*0.18);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.18 + 0.3);
-      o.start(ctx.currentTime + i*0.18);
-      o.stop(ctx.currentTime + i*0.18 + 0.3);
-    });
-  } catch {}
-}
-
-conectar();
-setInterval(() => { carregarFila(); carregarStats(); }, 15000);
 </script>
 </body>
 </html>
