@@ -207,6 +207,7 @@ header {
   <button class="modo-btn" onclick="setModo('painel')">📺 Painel</button>
   <button class="modo-btn" onclick="setModo('recepcao')">🏥 Recepção</button>
   <button class="modo-btn" onclick="setModo('consultorio')">👨‍⚕️ Consultório</button>
+  <button class="modo-btn" onclick="setModo('historico')">📋 Histórico</button>
 </div>
 
 <!-- ==================== TOTEM ==================== -->
@@ -415,6 +416,18 @@ header {
   </div>
 </div>
 
+<!-- ==================== HISTÓRICO ==================== -->
+<div class="view" id="view-historico">
+  <div style="padding:12px 16px">
+    <div class="card">
+      <div class="card-title">Senhas de hoje</div>
+      <div id="historicoLista">
+        <div class="fila-vazia">Carregando...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const API = '';
 let modoAtual = 'totem';
@@ -437,7 +450,7 @@ setInterval(() => {
 function setModo(modo) {
   modoAtual = modo;
   document.querySelectorAll('.modo-btn').forEach((b,i) =>
-    b.classList.toggle('active', ['totem','painel','recepcao','consultorio'][i] === modo));
+    b.classList.toggle('active', ['totem','painel','recepcao','consultorio','historico'][i] === modo));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + modo).classList.add('active');
   atualizar();
@@ -621,6 +634,51 @@ function atualizar() {
   carregarFilaRecepcao();
   carregarFilaConsultorio();
   carregarStats();
+  carregarHistorico();
+}
+
+async function carregarHistorico() {
+  try {
+    const res = await fetch(`${API}/api/fila/historico`);
+    const lista = await res.json();
+    const el = document.getElementById('historicoLista');
+    if (!lista.length) {
+      el.innerHTML = '<div class="fila-vazia">Nenhuma senha emitida hoje</div>';
+      return;
+    }
+    const statusLabel = {
+      AGUARDANDO_RECEPCAO: '⏳ Aguardando',
+      NA_RECEPCAO: '🏥 Na recepção',
+      AGUARDANDO_CONSULTORIO: '⏳ P/ consultório',
+      EM_CONSULTA: '👨‍⚕️ Em consulta',
+      ATENDIDO: '✅ Atendido',
+      AUSENTE: '❌ Ausente',
+      CANCELADO: '🚫 Cancelado'
+    };
+    const statusColor = {
+      ATENDIDO: '#16a34a',
+      AUSENTE: '#dc2626',
+      CANCELADO: '#dc2626',
+      EM_CONSULTA: '#2563eb',
+      NA_RECEPCAO: '#d97706',
+      AGUARDANDO_CONSULTORIO: '#7c3aed',
+      AGUARDANDO_RECEPCAO: '#94a3b8'
+    };
+    el.innerHTML = lista.map(item => {
+      const nome = item.paciente?.nome || item.nomeTemp || '—';
+      const hora = item.dataEntrada ? new Date(item.dataEntrada).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '—';
+      const cor = statusColor[item.status] || '#94a3b8';
+      const label = statusLabel[item.status] || item.status;
+      return `<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f1f5f9">
+        <div style="font-size:1rem;font-weight:700;color:#2563eb;min-width:52px">${item.senha}</div>
+        <div style="flex:1">
+          <div style="font-size:0.85rem;font-weight:500">${nome}</div>
+          <div style="font-size:0.7rem;color:#94a3b8">${item.especialidade || '—'} · ${hora}</div>
+        </div>
+        <div style="font-size:0.7rem;font-weight:600;color:${cor};white-space:nowrap">${label}</div>
+      </div>`;
+    }).join('');
+  } catch {}
 }
 
 setInterval(atualizar, 4000);

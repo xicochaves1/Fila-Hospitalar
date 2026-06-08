@@ -85,4 +85,7 @@ public interface FilaAtendimentoRepository extends JpaRepository<FilaAtendimento
 
     @Query("SELECT f FROM FilaAtendimento f WHERE f.paciente.id = :pacienteId ORDER BY f.dataEntrada DESC")
     List<FilaAtendimento> findHistoricoPorPaciente(@Param("pacienteId") Long pacienteId);
+
+    @Query("SELECT f FROM FilaAtendimento f WHERE DATE(f.dataEntrada) = CURRENT_DATE ORDER BY f.dataEntrada DESC")
+    List<FilaAtendimento> findHistoricoDia();
 }

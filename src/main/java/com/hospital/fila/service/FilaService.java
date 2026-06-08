@@ -127,6 +127,8 @@ public class FilaService {
     public List<FilaAtendimento> getFilaConsultorio(String especialidade) { return filaRepo.findFilaConsultorio(especialidade); }
     public Optional<FilaAtendimento> buscarPorSenha(String senha) { return filaRepo.findBySenha(senha); }
 
+    public List<FilaAtendimento> getHistoricoDia() { return filaRepo.findHistoricoDia(); }
+
     public Map<String, Object> getEstatisticas() {
         Map<String, Object> s = new HashMap<>();
         s.put("aguardandoRecepcao", filaRepo.countByStatus(StatusFila.AGUARDANDO_RECEPCAO));

@@ -99,4 +99,10 @@ public class FilaController {
     public ResponseEntity<Map<String, Object>> getEstatisticas() {
         return ResponseEntity.ok(service.getEstatisticas());
     }
+
+    // Histórico do dia
+    @GetMapping("/historico")
+    public ResponseEntity<List<FilaAtendimento>> getHistorico() {
+        return ResponseEntity.ok(service.getHistoricoDia());
+    }
 }
