@@ -6,147 +6,151 @@ import com.hospital.fila.model.FilaAtendimento;
 import com.hospital.fila.model.Paciente;
 import com.hospital.fila.repository.FilaAtendimentoRepository;
 import com.hospital.fila.repository.PacienteRepository;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class FilaService {
 
-    private final FilaAtendimentoRepository filaRepository;
-    private final PacienteRepository pacienteRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final FilaAtendimentoRepository filaRepo;
+    private final PacienteRepository pacienteRepo;
 
-    public FilaService(FilaAtendimentoRepository filaRepository,
-                       PacienteRepository pacienteRepository,
-                       SimpMessagingTemplate messagingTemplate) {
-        this.filaRepository = filaRepository;
-        this.pacienteRepository = pacienteRepository;
-        this.messagingTemplate = messagingTemplate;
+    public FilaService(FilaAtendimentoRepository filaRepo, PacienteRepository pacienteRepo) {
+        this.filaRepo = filaRepo;
+        this.pacienteRepo = pacienteRepo;
     }
 
+    // ==========================================
+    // ETAPA 1: TOTEM — Retirar senha
+    // ==========================================
     @Transactional
-    public synchronized FilaAtendimento checkIn(String nomePaciente, String cpf,
-            PrioridadeAtendimento prioridade, String especialidade, String observacoes) {
+    public synchronized FilaAtendimento retirarSenha(
+            String especialidade,
+            PrioridadeAtendimento prioridade,
+            String nomeTemp) {
 
-        Paciente paciente;
-        if (cpf != null && !cpf.isBlank()) {
-            paciente = pacienteRepository.findByCpf(cpf)
-                    .orElseGet(() -> pacienteRepository.save(
-                            Paciente.builder().nome(nomePaciente).cpf(cpf).build()
-                    ));
-        } else {
-            paciente = pacienteRepository.save(Paciente.builder().nome(nomePaciente).build());
-        }
-
-        String senha = gerarSenha(prioridade);
-
-        FilaAtendimento entrada = FilaAtendimento.builder()
+        String senha = gerarSenha(especialidade);
+        FilaAtendimento f = FilaAtendimento.builder()
                 .senha(senha)
-                .paciente(paciente)
-                .prioridade(prioridade)
-                .status(StatusFila.AGUARDANDO)
-                .especialidade(especialidade != null ? especialidade : "Clínico Geral")
-                .observacoes(observacoes)
+                .especialidade(especialidade)
+                .prioridade(prioridade != null ? prioridade : PrioridadeAtendimento.NORMAL)
+                .nomeTemp(nomeTemp)
                 .build();
-
-        FilaAtendimento salvo = filaRepository.save(entrada);
-        notificarAtualizacao("CHECK_IN", salvo);
-        return salvo;
+        return filaRepo.save(f);
     }
 
+    // ==========================================
+    // ETAPA 2A: RECEPÇÃO — Chamar próximo pela senha
+    // ==========================================
     @Transactional
-    public synchronized Optional<FilaAtendimento> chamarProximo(String guiche, String especialidade) {
-        Optional<FilaAtendimento> proximo = (especialidade != null && !especialidade.isBlank())
-                ? filaRepository.findProximoPorEspecialidade(especialidade)
-                : filaRepository.findProximo();
-
+    public synchronized Optional<FilaAtendimento> chamarProximoRecepcao(String guiche) {
+        Optional<FilaAtendimento> proximo = filaRepo.findProximoRecepcao();
         proximo.ifPresent(f -> {
-            f.setStatus(StatusFila.EM_ATENDIMENTO);
+            f.setStatus(StatusFila.NA_RECEPCAO);
             f.setGuiche(guiche);
-            f.setDataInicioAtendimento(LocalDateTime.now());
-            filaRepository.save(f);
-            notificarAtualizacao("CHAMAR", f);
+            f.setDataChegadaRecepcao(LocalDateTime.now());
+            filaRepo.save(f);
         });
-
         return proximo;
     }
 
+    // ==========================================
+    // ETAPA 2B: RECEPÇÃO — Cadastrar paciente e enviar ao consultório
+    // ==========================================
     @Transactional
-    public FilaAtendimento finalizarAtendimento(Long filaId, StatusFila novoStatus, String observacoes) {
-        FilaAtendimento fila = filaRepository.findById(filaId)
-                .orElseThrow(() -> new RuntimeException("Registro não encontrado: " + filaId));
-        fila.setStatus(novoStatus);
-        fila.setDataFimAtendimento(LocalDateTime.now());
+    public FilaAtendimento cadastrarEEnviarConsultorio(
+            Long filaId,
+            String nomePaciente,
+            String cpf,
+            String consultorio,
+            String observacoes) {
+
+        FilaAtendimento fila = filaRepo.findById(filaId)
+                .orElseThrow(() -> new RuntimeException("Fila não encontrada: " + filaId));
+
+        // Busca ou cria paciente
+        Paciente paciente;
+        if (cpf != null && !cpf.isBlank()) {
+            paciente = pacienteRepo.findByCpf(cpf)
+                    .orElseGet(() -> pacienteRepo.save(
+                            Paciente.builder().nome(nomePaciente).cpf(cpf).build()
+                    ));
+            paciente.setNome(nomePaciente);
+            pacienteRepo.save(paciente);
+        } else {
+            paciente = pacienteRepo.save(Paciente.builder().nome(nomePaciente).build());
+        }
+
+        fila.setPaciente(paciente);
+        fila.setConsultorio(consultorio);
+        fila.setStatus(StatusFila.AGUARDANDO_CONSULTORIO);
+        fila.setDataEnvioConsultorio(LocalDateTime.now());
         if (observacoes != null) fila.setObservacoes(observacoes);
-        FilaAtendimento salvo = filaRepository.save(fila);
-        notificarAtualizacao("FINALIZAR", salvo);
-        return salvo;
+
+        return filaRepo.save(fila);
     }
 
-    public List<FilaAtendimento> getFilaAtual() {
-        return filaRepository.findFilaAtual();
+    // ==========================================
+    // ETAPA 3: CONSULTÓRIO — Médico chama pelo nome
+    // ==========================================
+    @Transactional
+    public synchronized Optional<FilaAtendimento> chamarProximoConsultorio(String especialidade) {
+        Optional<FilaAtendimento> proximo = filaRepo.findProximoConsultorio(especialidade);
+        proximo.ifPresent(f -> {
+            f.setStatus(StatusFila.EM_CONSULTA);
+            f.setDataInicioConsulta(LocalDateTime.now());
+            filaRepo.save(f);
+        });
+        return proximo;
     }
 
-    public List<FilaAtendimento> getFilaAtualPorEspecialidade(String especialidade) {
-        return filaRepository.findFilaPorEspecialidade(especialidade);
+    // ==========================================
+    // FINALIZAR CONSULTA
+    // ==========================================
+    @Transactional
+    public FilaAtendimento finalizarConsulta(Long filaId, StatusFila status, String obs) {
+        FilaAtendimento f = filaRepo.findById(filaId)
+                .orElseThrow(() -> new RuntimeException("Não encontrado: " + filaId));
+        f.setStatus(status);
+        f.setDataFim(LocalDateTime.now());
+        if (obs != null) f.setObservacoes(obs);
+        return filaRepo.save(f);
     }
 
-    public Optional<FilaAtendimento> buscarPorSenha(String senha) {
-        return filaRepository.findBySenha(senha);
-    }
-
-    public List<FilaAtendimento> getHistoricoPaciente(Long pacienteId) {
-        return filaRepository.findHistoricoPorPaciente(pacienteId);
-    }
+    // ==========================================
+    // CONSULTAS
+    // ==========================================
+    public List<FilaAtendimento> getFilaRecepcao() { return filaRepo.findFilaRecepcao(); }
+    public List<FilaAtendimento> getFilaConsultorio(String especialidade) { return filaRepo.findFilaConsultorio(especialidade); }
+    public Optional<FilaAtendimento> buscarPorSenha(String senha) { return filaRepo.findBySenha(senha); }
 
     public Map<String, Object> getEstatisticas() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("aguardando", filaRepository.countByStatus(StatusFila.AGUARDANDO));
-        stats.put("emAtendimento", filaRepository.countByStatus(StatusFila.EM_ATENDIMENTO));
-        stats.put("atendidos", filaRepository.countByStatus(StatusFila.ATENDIDO));
-        stats.put("ausentes", filaRepository.countByStatus(StatusFila.AUSENTE));
-
-        LocalDateTime inicioDia = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
-        List<FilaAtendimento> atendidosHoje = filaRepository
-                .findByStatusAndDataEntradaBetween(StatusFila.ATENDIDO, inicioDia, LocalDateTime.now());
-
-        double tempoMedio = atendidosHoje.stream()
-                .filter(f -> f.getDataInicioAtendimento() != null)
-                .mapToLong(f -> ChronoUnit.MINUTES.between(f.getDataEntrada(), f.getDataInicioAtendimento()))
-                .average().orElse(0);
-
-        stats.put("tempoMedioEsperaMinutos", Math.round(tempoMedio));
-        stats.put("totalHoje", atendidosHoje.size() + (long) stats.get("aguardando") + (long) stats.get("emAtendimento"));
-        return stats;
+        Map<String, Object> s = new HashMap<>();
+        s.put("aguardandoRecepcao", filaRepo.countByStatus(StatusFila.AGUARDANDO_RECEPCAO));
+        s.put("naRecepcao", filaRepo.countByStatus(StatusFila.NA_RECEPCAO));
+        s.put("aguardandoConsultorio", filaRepo.countByStatus(StatusFila.AGUARDANDO_CONSULTORIO));
+        s.put("emConsulta", filaRepo.countByStatus(StatusFila.EM_CONSULTA));
+        s.put("atendidos", filaRepo.countByStatus(StatusFila.ATENDIDO));
+        s.put("total", filaRepo.count());
+        return s;
     }
 
-    private String gerarSenha(PrioridadeAtendimento prioridade) {
-        String prefixo = switch (prioridade) {
-            case EMERGENCIA -> "E";
-            case URGENTE -> "U";
-            case PRIORITARIO -> "P";
-            case NORMAL -> "N";
+    // ==========================================
+    // GERAR SENHA por especialidade
+    // CG001, OR001, PE001, CA001, EM001
+    // ==========================================
+    private String gerarSenha(String especialidade) {
+        String prefixo = switch (especialidade != null ? especialidade : "") {
+            case "Ortopedia" -> "OR";
+            case "Pediatria" -> "PE";
+            case "Cardiologia" -> "CA";
+            case "Emergência" -> "EM";
+            default -> "CG"; // Clínico Geral
         };
-        long count = filaRepository.countSenhaHoje(prefixo) + 1;
+        long count = filaRepo.countSenhaHoje(prefixo) + 1;
         return String.format("%s%03d", prefixo, count);
-    }
-
-    private void notificarAtualizacao(String evento, FilaAtendimento fila) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("evento", evento);
-        payload.put("senha", fila.getSenha());
-        payload.put("guiche", fila.getGuiche());
-        payload.put("prioridade", fila.getPrioridade());
-        payload.put("status", fila.getStatus());
-        payload.put("totalAguardando", filaRepository.countByStatus(StatusFila.AGUARDANDO));
-        messagingTemplate.convertAndSend("/topic/fila", payload);
     }
 }

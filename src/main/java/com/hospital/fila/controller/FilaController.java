@@ -15,66 +15,88 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class FilaController {
 
-    private final FilaService filaService;
+    private final FilaService service;
+    public FilaController(FilaService service) { this.service = service; }
 
-    public FilaController(FilaService filaService) {
-        this.filaService = filaService;
-    }
-
-    @PostMapping("/checkin")
-    public ResponseEntity<FilaAtendimento> checkIn(@RequestBody Map<String, String> body) {
-        PrioridadeAtendimento prioridade = PrioridadeAtendimento.valueOf(
-                body.getOrDefault("prioridade", "NORMAL")
-        );
-        FilaAtendimento resultado = filaService.checkIn(
-                body.get("nomePaciente"),
-                body.get("cpf"),
+    // ETAPA 1: Totem — retirar senha
+    @PostMapping("/senha")
+    public ResponseEntity<FilaAtendimento> retirarSenha(@RequestBody Map<String, String> body) {
+        PrioridadeAtendimento prioridade = body.containsKey("prioridade")
+                ? PrioridadeAtendimento.valueOf(body.get("prioridade"))
+                : PrioridadeAtendimento.NORMAL;
+        FilaAtendimento f = service.retirarSenha(
+                body.getOrDefault("especialidade", "Clínico Geral"),
                 prioridade,
-                body.get("especialidade"),
-                body.get("observacoes")
+                body.get("nomeTemp")
         );
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(f);
     }
 
-    @GetMapping
-    public ResponseEntity<List<FilaAtendimento>> getFilaAtual(
-            @RequestParam(required = false) String especialidade) {
-        List<FilaAtendimento> fila = (especialidade != null)
-                ? filaService.getFilaAtualPorEspecialidade(especialidade)
-                : filaService.getFilaAtual();
-        return ResponseEntity.ok(fila);
-    }
-
-    @PostMapping("/chamar")
-    public ResponseEntity<?> chamarProximo(@RequestBody Map<String, String> body) {
-        return filaService.chamarProximo(body.get("guiche"), body.get("especialidade"))
+    // ETAPA 2A: Recepção — chamar próximo
+    @PostMapping("/recepcao/chamar")
+    public ResponseEntity<?> chamarProximoRecepcao(@RequestBody Map<String, String> body) {
+        return service.chamarProximoRecepcao(body.getOrDefault("guiche", "Guichê 01"))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
     }
 
-    @PutMapping("/{id}/status")
-    public ResponseEntity<FilaAtendimento> atualizarStatus(
+    // ETAPA 2B: Recepção — cadastrar e enviar ao consultório
+    @PutMapping("/{id}/consultorio")
+    public ResponseEntity<FilaAtendimento> enviarConsultorio(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
-        StatusFila status = StatusFila.valueOf(body.get("status"));
-        FilaAtendimento resultado = filaService.finalizarAtendimento(id, status, body.get("observacoes"));
-        return ResponseEntity.ok(resultado);
+        FilaAtendimento f = service.cadastrarEEnviarConsultorio(
+                id,
+                body.get("nomePaciente"),
+                body.get("cpf"),
+                body.get("consultorio"),
+                body.get("observacoes")
+        );
+        return ResponseEntity.ok(f);
     }
 
+    // ETAPA 3: Consultório — médico chama pelo nome
+    @PostMapping("/consultorio/chamar")
+    public ResponseEntity<?> chamarProximoConsultorio(@RequestBody Map<String, String> body) {
+        return service.chamarProximoConsultorio(body.get("especialidade"))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
+    }
+
+    // Finalizar consulta
+    @PutMapping("/{id}/finalizar")
+    public ResponseEntity<FilaAtendimento> finalizar(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        StatusFila status = StatusFila.valueOf(body.getOrDefault("status", "ATENDIDO"));
+        FilaAtendimento f = service.finalizarConsulta(id, status, body.get("observacoes"));
+        return ResponseEntity.ok(f);
+    }
+
+    // Fila da recepção
+    @GetMapping("/recepcao")
+    public ResponseEntity<List<FilaAtendimento>> getFilaRecepcao() {
+        return ResponseEntity.ok(service.getFilaRecepcao());
+    }
+
+    // Fila do consultório
+    @GetMapping("/consultorio")
+    public ResponseEntity<List<FilaAtendimento>> getFilaConsultorio(
+            @RequestParam(required = false) String especialidade) {
+        return ResponseEntity.ok(service.getFilaConsultorio(especialidade));
+    }
+
+    // Buscar por senha
     @GetMapping("/senha/{senha}")
     public ResponseEntity<?> buscarPorSenha(@PathVariable String senha) {
-        return filaService.buscarPorSenha(senha)
+        return service.buscarPorSenha(senha)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/historico/paciente/{pacienteId}")
-    public ResponseEntity<List<FilaAtendimento>> getHistoricoPaciente(@PathVariable Long pacienteId) {
-        return ResponseEntity.ok(filaService.getHistoricoPaciente(pacienteId));
-    }
-
+    // Estatísticas
     @GetMapping("/estatisticas")
     public ResponseEntity<Map<String, Object>> getEstatisticas() {
-        return ResponseEntity.ok(filaService.getEstatisticas());
+        return ResponseEntity.ok(service.getEstatisticas());
     }
 }

@@ -22,16 +22,9 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                // Painel público (somente leitura)
-                .requestMatchers("/api/fila", "/api/fila/senha/**", "/api/fila/estatisticas").permitAll()
-                // Check-in público (paciente se cadastra)
-                .requestMatchers("/api/fila/checkin").permitAll()
-                // WebSocket público
-                .requestMatchers("/ws-fila/**").permitAll()
-                // Swagger
-                .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
-                // Demais rotas requerem autenticação
-                .anyRequest().permitAll()            )
+                // Tudo público para facilitar demonstração
+                .anyRequest().permitAll()
+            )
             .httpBasic(basic -> {}); // Autenticação básica para simplificar
 
         return http.build();

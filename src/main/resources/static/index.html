@@ -4,452 +4,665 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>FilaFácil</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:#f0f4f8; color:#1a202c; min-height:100vh; }
 
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #f5f7fa;
-    color: #1a1a2e;
-    min-height: 100vh;
-  }
+/* === HEADER === */
+header {
+  background:#2563eb; color:#fff;
+  padding:0 20px; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:100;
+}
+.logo { font-size:1.2rem; font-weight:700; letter-spacing:-0.3px; }
+.logo span { font-weight:300; opacity:0.85; }
+#relogio { font-size:0.78rem; opacity:0.8; }
 
-  header {
-    background: #fff;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 0 20px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
+/* === MODO SELECTOR === */
+.modo-selector {
+  display:flex; gap:8px; padding:12px 16px;
+  background:#fff; border-bottom:1px solid #e2e8f0;
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.modo-btn {
+  flex-shrink:0; padding:8px 14px;
+  border:1.5px solid #e2e8f0; border-radius:20px;
+  font-size:0.78rem; font-weight:500; cursor:pointer;
+  background:#fff; color:#64748b; transition:all 0.2s;
+  white-space:nowrap;
+}
+.modo-btn.active { background:#2563eb; color:#fff; border-color:#2563eb; }
 
-  .logo { font-size: 1.2rem; font-weight: 600; color: #2563eb; }
-  .logo span { color: #1a1a2e; font-weight: 300; }
+/* === VIEWS === */
+.view { display:none; }
+.view.active { display:block; }
 
-  .header-right { display: flex; align-items: center; gap: 12px; font-size: 0.75rem; color: #64748b; }
-  .status-badge { display: flex; align-items: center; gap: 5px; }
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+/* === TOTEM === */
+.totem-wrap {
+  padding:20px 16px;
+  display:flex; flex-direction:column; gap:12px;
+}
+.totem-title { font-size:1rem; font-weight:600; color:#1a202c; margin-bottom:4px; }
+.totem-subtitle { font-size:0.82rem; color:#64748b; }
 
-  /* CHAMADA ATUAL */
-  .chamada-bar {
-    background: #2563eb;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    gap: 8px;
-  }
-  .chamada-item { text-align: center; flex: 1; }
-  .chamada-item label {
-    display: block;
-    font-size: 0.6rem;
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.65);
-    margin-bottom: 4px;
-  }
-  .chamada-item .valor {
-    font-size: 1.8rem;
-    font-weight: 600;
-    color: #fff;
-    line-height: 1;
-  }
-  .sep { width: 1px; height: 40px; background: rgba(255,255,255,0.2); }
+.especialidade-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  margin:8px 0;
+}
+.esp-card {
+  padding:16px 12px; background:#fff;
+  border:2px solid #e2e8f0; border-radius:12px;
+  text-align:center; cursor:pointer; transition:all 0.2s;
+}
+.esp-card:active { transform:scale(0.97); }
+.esp-card.selected { border-color:#2563eb; background:#eff6ff; }
+.esp-icon { font-size:1.8rem; margin-bottom:6px; }
+.esp-nome { font-size:0.82rem; font-weight:600; color:#1a202c; }
+.esp-sigla { font-size:0.65rem; color:#94a3b8; margin-top:2px; }
 
-  /* STATS */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    background: #fff;
-    border-bottom: 1px solid #e2e8f0;
-  }
-  .stat {
-    padding: 14px 12px;
-    border-right: 1px solid #e2e8f0;
-    text-align: center;
-  }
-  .stat:last-child { border-right: none; }
-  .stat-num { font-size: 1.5rem; font-weight: 600; color: #2563eb; line-height: 1; }
-  .stat-num.verde { color: #16a34a; }
-  .stat-num.cinza { color: #94a3b8; }
-  .stat-label { font-size: 0.6rem; color: #94a3b8; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+.prioridade-row {
+  display:flex; gap:8px; margin:4px 0;
+}
+.pri-btn {
+  flex:1; padding:10px 6px;
+  border:1.5px solid #e2e8f0; border-radius:8px;
+  font-size:0.72rem; font-weight:600; cursor:pointer;
+  background:#fff; text-align:center; transition:all 0.2s;
+}
+.pri-btn.selected { border-color:#2563eb; background:#eff6ff; color:#2563eb; }
 
-  /* TABS */
-  .tabs {
-    display: flex;
-    background: #fff;
-    border-bottom: 1px solid #e2e8f0;
-    position: sticky;
-    top: 56px;
-    z-index: 99;
-  }
-  .tab {
-    flex: 1;
-    padding: 12px;
-    text-align: center;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #94a3b8;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-  }
-  .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+/* === SENHA EMITIDA === */
+.senha-emitida {
+  background:#2563eb; color:#fff;
+  border-radius:16px; padding:28px 20px;
+  text-align:center; margin:16px;
+}
+.senha-emitida .label { font-size:0.75rem; opacity:0.8; text-transform:uppercase; letter-spacing:0.1em; }
+.senha-emitida .senha-num { font-size:4rem; font-weight:700; line-height:1; margin:8px 0; }
+.senha-emitida .esp-nome { font-size:0.9rem; opacity:0.9; }
+.senha-emitida .posicao { font-size:0.8rem; opacity:0.75; margin-top:8px; }
 
-  /* CONTENT */
-  .content { padding: 16px; }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+/* === PAINEL GERAL === */
+.painel-wrap { padding:12px 16px; }
 
-  /* FILA */
-  .fila-lista { display: flex; flex-direction: column; gap: 8px; }
-  .fila-item {
-    display: grid;
-    grid-template-columns: 28px 1fr auto;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    animation: fadeIn 0.3s ease;
-  }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.chamada-card {
+  background:#2563eb; color:#fff;
+  border-radius:14px; padding:16px;
+  display:flex; justify-content:space-around;
+  margin-bottom:12px;
+}
+.chamada-item { text-align:center; }
+.chamada-item label { display:block; font-size:0.6rem; opacity:0.75; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:4px; }
+.chamada-item .val { font-size:2rem; font-weight:700; line-height:1; }
+.chamada-item .val.sm { font-size:1.3rem; }
 
-  .pos { font-size: 0.72rem; color: #94a3b8; font-weight: 500; text-align: center; }
-  .item-nome { font-size: 0.88rem; font-weight: 500; color: #1a1a2e; }
-  .item-esp { font-size: 0.7rem; color: #94a3b8; margin-top: 1px; }
-  .item-right { text-align: right; }
-  .item-senha { font-size: 0.95rem; font-weight: 700; color: #2563eb; }
+.stats-row { display:flex; gap:8px; margin-bottom:12px; }
+.stat-mini {
+  flex:1; background:#fff; border:1px solid #e2e8f0;
+  border-radius:10px; padding:10px; text-align:center;
+}
+.stat-mini .n { font-size:1.4rem; font-weight:700; color:#2563eb; }
+.stat-mini .n.g { color:#16a34a; }
+.stat-mini .n.gray { color:#94a3b8; }
+.stat-mini .l { font-size:0.58rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em; margin-top:2px; }
 
-  .badge {
-    display: inline-block;
-    font-size: 0.58rem;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-top: 4px;
-  }
-  .badge-EMERGENCIA { background: #fee2e2; color: #dc2626; }
-  .badge-URGENTE    { background: #fef3c7; color: #d97706; }
-  .badge-PRIORITARIO{ background: #ede9fe; color: #7c3aed; }
-  .badge-NORMAL     { background: #dbeafe; color: #2563eb; }
+.fila-section-title {
+  font-size:0.72rem; font-weight:600; color:#64748b;
+  text-transform:uppercase; letter-spacing:0.08em;
+  margin:12px 0 8px;
+}
 
-  .fila-vazia { text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 0.85rem; }
+/* === FILA ITEMS === */
+.fila-lista { display:flex; flex-direction:column; gap:7px; }
+.fila-item {
+  display:flex; align-items:center; gap:12px;
+  background:#fff; border:1px solid #e2e8f0;
+  border-radius:10px; padding:11px 14px;
+  animation:fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+.fila-pos { font-size:0.7rem; color:#94a3b8; width:20px; text-align:center; }
+.fila-senha { font-size:1rem; font-weight:700; color:#2563eb; min-width:52px; }
+.fila-info { flex:1; }
+.fila-nome { font-size:0.85rem; font-weight:500; }
+.fila-sub { font-size:0.7rem; color:#94a3b8; margin-top:1px; }
+.badge {
+  font-size:0.58rem; font-weight:700; padding:2px 7px;
+  border-radius:4px; text-transform:uppercase;
+}
+.badge-EMERGENCIA { background:#fee2e2; color:#dc2626; }
+.badge-URGENTE    { background:#fef3c7; color:#d97706; }
+.badge-PRIORITARIO{ background:#ede9fe; color:#7c3aed; }
+.badge-NORMAL     { background:#dbeafe; color:#2563eb; }
 
-  /* FORMS */
-  .form-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-  }
-  .form-title { font-size: 0.9rem; font-weight: 600; color: #1a1a2e; margin-bottom: 14px; }
-  .field { margin-bottom: 10px; }
-  .field label {
-    display: block;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    margin-bottom: 4px;
-  }
-  .field input, .field select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 0.88rem;
-    font-family: 'Inter', sans-serif;
-    color: #1a1a2e;
-    background: #fff;
-    -webkit-appearance: none;
-    outline: none;
-  }
-  .field input:focus, .field select:focus { border-color: #2563eb; }
+.fila-vazia { text-align:center; padding:32px 20px; color:#94a3b8; font-size:0.85rem; }
 
-  .btn {
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .btn-blue { background: #2563eb; color: #fff; }
-  .btn-blue:hover, .btn-blue:active { background: #1d4ed8; }
+/* === RECEPÇÃO === */
+.recepcao-wrap { padding:12px 16px; }
 
-  /* TOAST */
-  .toast {
-    position: fixed;
-    bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-left: 4px solid #2563eb;
-    border-radius: 10px;
-    padding: 12px 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-    z-index: 999;
-    animation: toastIn 0.25s ease;
-    min-width: 240px;
-    text-align: center;
-  }
-  @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-  .toast-titulo { font-size: 0.7rem; color: #64748b; margin-bottom: 2px; }
-  .toast-senha { font-size: 1.8rem; font-weight: 700; color: #2563eb; }
-  .toast-nome { font-size: 0.82rem; color: #1a1a2e; }
+.card {
+  background:#fff; border:1px solid #e2e8f0;
+  border-radius:12px; padding:16px; margin-bottom:12px;
+}
+.card-title { font-size:0.9rem; font-weight:600; margin-bottom:14px; color:#1a202c; }
 
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+.field { margin-bottom:10px; }
+.field label { display:block; font-size:0.65rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:4px; }
+.field input, .field select {
+  width:100%; padding:10px 12px;
+  border:1px solid #e2e8f0; border-radius:8px;
+  font-size:0.88rem; font-family:'Inter',sans-serif;
+  color:#1a202c; background:#fff; outline:none;
+  -webkit-appearance:none;
+}
+.field input:focus, .field select:focus { border-color:#2563eb; }
+
+.btn { width:100%; padding:12px; border:none; border-radius:8px; font-family:'Inter',sans-serif; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.15s; }
+.btn-blue { background:#2563eb; color:#fff; }
+.btn-blue:active { background:#1d4ed8; }
+.btn-green { background:#16a34a; color:#fff; margin-top:8px; }
+.btn-green:active { background:#15803d; }
+.btn-outline { background:#fff; color:#2563eb; border:1.5px solid #bfdbfe; margin-top:8px; }
+
+/* Paciente na recepção destacado */
+.paciente-ativo {
+  background:#eff6ff; border:2px solid #2563eb;
+  border-radius:12px; padding:14px; margin-bottom:12px;
+}
+.paciente-ativo .senha-badge {
+  font-size:1.6rem; font-weight:700; color:#2563eb;
+}
+.paciente-ativo .esp-tag { font-size:0.75rem; color:#64748b; margin-top:2px; }
+
+/* === TOAST === */
+.toast {
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+  background:#fff; border:1px solid #e2e8f0; border-left:4px solid #2563eb;
+  border-radius:10px; padding:12px 16px;
+  box-shadow:0 4px 20px rgba(0,0,0,.12);
+  z-index:999; animation:toastIn .25s ease;
+  min-width:220px; max-width:300px; text-align:center;
+}
+@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+.toast-title { font-size:0.7rem; color:#64748b; }
+.toast-big { font-size:1.6rem; font-weight:700; color:#2563eb; }
+.toast-sub { font-size:0.8rem; color:#1a202c; }
+
+::-webkit-scrollbar { width:3px; }
+::-webkit-scrollbar-thumb { background:#e2e8f0; border-radius:2px; }
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">Fila<span>Fácil</span></div>
-  <div class="header-right">
-    <span id="relogio">--:--</span>
-    <div class="status-badge">
-      <div class="status-dot"></div>
-      <span>Online</span>
-    </div>
-  </div>
+  <span id="relogio">--:--</span>
 </header>
 
-<div class="chamada-bar">
-  <div class="chamada-item">
-    <label>Senha</label>
-    <div class="valor" id="senhaAtual">—</div>
-  </div>
-  <div class="sep"></div>
-  <div class="chamada-item">
-    <label>Guichê</label>
-    <div class="valor" id="guicheAtual" style="font-size:1.4rem">—</div>
-  </div>
-  <div class="sep"></div>
-  <div class="chamada-item">
-    <label>Aguardando</label>
-    <div class="valor" id="totalAguardando">0</div>
-  </div>
+<!-- MODO SELECTOR -->
+<div class="modo-selector">
+  <button class="modo-btn active" onclick="setModo('totem')">🎫 Totem</button>
+  <button class="modo-btn" onclick="setModo('painel')">📺 Painel</button>
+  <button class="modo-btn" onclick="setModo('recepcao')">🏥 Recepção</button>
+  <button class="modo-btn" onclick="setModo('consultorio')">👨‍⚕️ Consultório</button>
 </div>
 
-<div class="stats-grid">
-  <div class="stat">
-    <div class="stat-num" id="statAguardando">0</div>
-    <div class="stat-label">Espera</div>
-  </div>
-  <div class="stat">
-    <div class="stat-num verde" id="statAtendendo">0</div>
-    <div class="stat-label">Atend.</div>
-  </div>
-  <div class="stat">
-    <div class="stat-num cinza" id="statAtendidos">0</div>
-    <div class="stat-label">Feitos</div>
-  </div>
-  <div class="stat">
-    <div class="stat-num cinza" id="statTempo">—</div>
-    <div class="stat-label">Min.</div>
-  </div>
-</div>
+<!-- ==================== TOTEM ==================== -->
+<div class="view active" id="view-totem">
+  <div class="totem-wrap" id="totem-form">
+    <div>
+      <div class="totem-title">Retire sua senha</div>
+      <div class="totem-subtitle">Selecione a especialidade desejada</div>
+    </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="showTab('fila')">🏥 Fila</div>
-  <div class="tab" onclick="showTab('checkin')">➕ Check-in</div>
-  <div class="tab" onclick="showTab('chamar')">📢 Chamar</div>
-</div>
+    <div class="especialidade-grid">
+      <div class="esp-card" onclick="selecionarEsp('Clínico Geral','CG')" id="esp-CG">
+        <div class="esp-icon">🩺</div>
+        <div class="esp-nome">Clínico Geral</div>
+        <div class="esp-sigla">CG</div>
+      </div>
+      <div class="esp-card" onclick="selecionarEsp('Ortopedia','OR')" id="esp-OR">
+        <div class="esp-icon">🦴</div>
+        <div class="esp-nome">Ortopedia</div>
+        <div class="esp-sigla">OR</div>
+      </div>
+      <div class="esp-card" onclick="selecionarEsp('Pediatria','PE')" id="esp-PE">
+        <div class="esp-icon">👶</div>
+        <div class="esp-nome">Pediatria</div>
+        <div class="esp-sigla">PE</div>
+      </div>
+      <div class="esp-card" onclick="selecionarEsp('Cardiologia','CA')" id="esp-CA">
+        <div class="esp-icon">❤️</div>
+        <div class="esp-nome">Cardiologia</div>
+        <div class="esp-sigla">CA</div>
+      </div>
+      <div class="esp-card" onclick="selecionarEsp('Emergência','EM')" id="esp-EM" style="grid-column:span 2">
+        <div class="esp-icon">🚨</div>
+        <div class="esp-nome">Emergência</div>
+        <div class="esp-sigla">EM — Atendimento prioritário</div>
+      </div>
+    </div>
 
-<div class="content">
-  <!-- FILA -->
-  <div class="tab-panel active" id="tab-fila">
-    <div class="fila-lista" id="filaLista">
-      <div class="fila-vazia">Nenhum paciente aguardando</div>
+    <div>
+      <div class="totem-subtitle" style="margin-bottom:8px">Prioridade</div>
+      <div class="prioridade-row">
+        <button class="pri-btn selected" onclick="selecionarPri('NORMAL',this)">Normal</button>
+        <button class="pri-btn" onclick="selecionarPri('PRIORITARIO',this)">Prioritário</button>
+        <button class="pri-btn" onclick="selecionarPri('URGENTE',this)">Urgente</button>
+        <button class="pri-btn" onclick="selecionarPri('EMERGENCIA',this)">Emerg.</button>
+      </div>
+    </div>
+
+    <button class="btn btn-blue" onclick="retirarSenha()">Retirar senha</button>
+  </div>
+
+  <!-- Senha emitida -->
+  <div id="totem-senha" style="display:none">
+    <div class="senha-emitida">
+      <div class="label">Sua senha</div>
+      <div class="senha-num" id="senhaEmitida">—</div>
+      <div class="esp-nome" id="espEmitida">—</div>
+      <div class="posicao" id="posEmitida"></div>
+    </div>
+    <div style="padding:0 16px">
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;text-align:center;color:#64748b;font-size:0.85rem;line-height:1.5">
+        Aguarde ser chamado pela <strong>recepção</strong>.<br>Acompanhe o painel de chamadas.
+      </div>
+      <button class="btn btn-outline" onclick="voltarTotem()" style="margin-top:12px">Nova senha</button>
     </div>
   </div>
+</div>
 
-  <!-- CHECK-IN -->
-  <div class="tab-panel" id="tab-checkin">
-    <div class="form-card">
-      <div class="form-title">Novo check-in</div>
-      <div class="field">
-        <label>Nome do paciente</label>
-        <input type="text" id="inputNome" placeholder="Nome completo">
+<!-- ==================== PAINEL ==================== -->
+<div class="view" id="view-painel">
+  <div class="painel-wrap">
+    <!-- Última chamada -->
+    <div class="chamada-card">
+      <div class="chamada-item">
+        <label>Recepção chamou</label>
+        <div class="val" id="painelSenhaRecepcao">—</div>
+        <div style="font-size:0.7rem;opacity:0.75" id="painelGuiche"></div>
       </div>
-      <div class="field">
-        <label>CPF (opcional)</label>
-        <input type="text" id="inputCpf" placeholder="000.000.000-00" inputmode="numeric">
+      <div style="width:1px;background:rgba(255,255,255,0.2)"></div>
+      <div class="chamada-item">
+        <label>Consultório chamou</label>
+        <div class="val sm" id="painelNomeConsultorio">—</div>
+        <div style="font-size:0.7rem;opacity:0.75" id="painelConsultorio"></div>
       </div>
-      <div class="field">
-        <label>Prioridade</label>
-        <select id="inputPrioridade">
-          <option value="NORMAL">Normal</option>
-          <option value="PRIORITARIO">Prioritário (idoso/grávida)</option>
-          <option value="URGENTE">Urgente</option>
-          <option value="EMERGENCIA">Emergência</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Especialidade</label>
-        <select id="inputEspecialidade">
-          <option>Clínico Geral</option>
-          <option>Ortopedia</option>
-          <option>Pediatria</option>
-          <option>Cardiologia</option>
-          <option>Emergência</option>
-        </select>
-      </div>
-      <button class="btn btn-blue" onclick="realizarCheckin()">Entrar na fila</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-mini"><div class="n" id="sAguRecepcao">0</div><div class="l">Recepção</div></div>
+      <div class="stat-mini"><div class="n g" id="sAguConsultorio">0</div><div class="l">Consultório</div></div>
+      <div class="stat-mini"><div class="n gray" id="sAtendidos">0</div><div class="l">Atendidos</div></div>
+    </div>
+
+    <!-- Fila recepção -->
+    <div class="fila-section-title">Aguardando Recepção</div>
+    <div class="fila-lista" id="filaRecepcao">
+      <div class="fila-vazia">Nenhum aguardando</div>
+    </div>
+
+    <!-- Fila consultório -->
+    <div class="fila-section-title" style="margin-top:16px">Aguardando Consultório</div>
+    <div class="fila-lista" id="filaConsultorio">
+      <div class="fila-vazia">Nenhum aguardando</div>
     </div>
   </div>
+</div>
 
-  <!-- CHAMAR PRÓXIMO -->
-  <div class="tab-panel" id="tab-chamar">
-    <div class="form-card">
-      <div class="form-title">Chamar próximo</div>
+<!-- ==================== RECEPÇÃO ==================== -->
+<div class="view" id="view-recepcao">
+  <div class="recepcao-wrap">
+
+    <!-- Chamar próximo -->
+    <div class="card">
+      <div class="card-title">Chamar próximo</div>
       <div class="field">
         <label>Guichê</label>
-        <input type="text" id="inputGuiche" placeholder="Ex: Guichê 01" value="Guichê 01">
+        <input type="text" id="recGuiche" value="Guichê 01">
       </div>
+      <button class="btn btn-blue" onclick="chamarProximoRecepcao()">📢 Chamar próximo da fila</button>
+    </div>
+
+    <!-- Paciente ativo na recepção -->
+    <div id="pacienteAtivoWrap" style="display:none">
+      <div class="paciente-ativo">
+        <div class="senha-badge" id="recSenhaAtiva">—</div>
+        <div class="esp-tag" id="recEspAtiva">—</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Cadastrar e enviar ao consultório</div>
+        <div class="field">
+          <label>Nome completo</label>
+          <input type="text" id="recNome" placeholder="Nome do paciente">
+        </div>
+        <div class="field">
+          <label>CPF (opcional)</label>
+          <input type="text" id="recCpf" placeholder="000.000.000-00" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Consultório destino</label>
+          <select id="recConsultorio">
+            <option>Consultório 01</option>
+            <option>Consultório 02</option>
+            <option>Consultório 03</option>
+            <option>Consultório 04</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Observações</label>
+          <input type="text" id="recObs" placeholder="Opcional">
+        </div>
+        <button class="btn btn-green" onclick="enviarConsultorio()">✅ Enviar ao consultório</button>
+        <button class="btn btn-outline" onclick="marcarAusente()">❌ Ausente</button>
+      </div>
+    </div>
+
+    <!-- Fila aguardando recepção -->
+    <div class="card">
+      <div class="card-title">Fila — Aguardando recepção</div>
+      <div class="fila-lista" id="recFilaLista">
+        <div class="fila-vazia">Nenhum aguardando</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CONSULTÓRIO ==================== -->
+<div class="view" id="view-consultorio">
+  <div style="padding:12px 16px">
+
+    <div class="card">
+      <div class="card-title">Chamar próximo paciente</div>
       <div class="field">
-        <label>Especialidade (opcional)</label>
-        <select id="inputEspChamar">
-          <option value="">Todos</option>
-          <option>Clínico Geral</option>
-          <option>Ortopedia</option>
-          <option>Pediatria</option>
-          <option>Cardiologia</option>
-          <option>Emergência</option>
+        <label>Especialidade / Consultório</label>
+        <select id="consEsp">
+          <option value="Clínico Geral">Clínico Geral</option>
+          <option value="Ortopedia">Ortopedia</option>
+          <option value="Pediatria">Pediatria</option>
+          <option value="Cardiologia">Cardiologia</option>
+          <option value="Emergência">Emergência</option>
         </select>
       </div>
-      <button class="btn btn-blue" onclick="chamarProximo()">Chamar próximo</button>
+      <button class="btn btn-blue" onclick="chamarProximoConsultorio()">📢 Chamar próximo</button>
+    </div>
+
+    <!-- Paciente chamado -->
+    <div id="consAtivoWrap" style="display:none">
+      <div class="paciente-ativo">
+        <div style="font-size:0.7rem;color:#2563eb;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Chamando</div>
+        <div style="font-size:1.5rem;font-weight:700" id="consNomeAtivo">—</div>
+        <div style="font-size:0.78rem;color:#64748b;margin-top:4px" id="consSenhaAtiva">—</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-green" onclick="finalizarConsulta('ATENDIDO')" style="flex:1">✅ Finalizar</button>
+        <button class="btn btn-outline" onclick="finalizarConsulta('AUSENTE')" style="flex:1;margin-top:0">❌ Ausente</button>
+      </div>
+    </div>
+
+    <!-- Fila do consultório -->
+    <div class="card">
+      <div class="card-title">Fila do consultório</div>
+      <div class="fila-lista" id="consFilaLista">
+        <div class="fila-vazia">Nenhum aguardando</div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 const API = '';
+let modoAtual = 'totem';
+let espSelecionada = null;
+let priSelecionada = 'NORMAL';
+let pacienteAtivoId = null;
+let consAtivoId = null;
 
-// Tabs
-function showTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['fila','checkin','chamar'][i] === name));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-}
-
-// Relógio
+// ==========================================
+// RELÓGIO
+// ==========================================
 setInterval(() => {
-  document.getElementById('relogio').textContent = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('relogio').textContent =
+    new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
 }, 1000);
 
-// Polling (atualiza a cada 3s)
-async function carregarFila() {
+// ==========================================
+// MODO
+// ==========================================
+function setModo(modo) {
+  modoAtual = modo;
+  document.querySelectorAll('.modo-btn').forEach((b,i) =>
+    b.classList.toggle('active', ['totem','painel','recepcao','consultorio'][i] === modo));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + modo).classList.add('active');
+  atualizar();
+}
+
+// ==========================================
+// TOTEM
+// ==========================================
+function selecionarEsp(nome, sigla) {
+  espSelecionada = nome;
+  document.querySelectorAll('.esp-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('esp-' + sigla).classList.add('selected');
+}
+
+function selecionarPri(pri, btn) {
+  priSelecionada = pri;
+  document.querySelectorAll('.pri-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+async function retirarSenha() {
+  if (!espSelecionada) { alert('Selecione a especialidade'); return; }
   try {
-    const res = await fetch(`${API}/api/fila`);
-    renderFila(await res.json());
-  } catch { renderFila([]); }
+    const res = await fetch(`${API}/api/fila/senha`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ especialidade: espSelecionada, prioridade: priSelecionada })
+    });
+    const data = await res.json();
+    document.getElementById('senhaEmitida').textContent = data.senha;
+    document.getElementById('espEmitida').textContent = espSelecionada;
+    document.getElementById('totem-form').style.display = 'none';
+    document.getElementById('totem-senha').style.display = 'block';
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+function voltarTotem() {
+  espSelecionada = null;
+  priSelecionada = 'NORMAL';
+  document.querySelectorAll('.esp-card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.pri-btn').forEach((b,i) => b.classList.toggle('selected', i===0));
+  document.getElementById('totem-form').style.display = 'block';
+  document.getElementById('totem-senha').style.display = 'none';
+}
+
+// ==========================================
+// RECEPÇÃO
+// ==========================================
+async function chamarProximoRecepcao() {
+  const guiche = document.getElementById('recGuiche').value.trim();
+  if (!guiche) { alert('Informe o guichê'); return; }
+  try {
+    const res = await fetch(`${API}/api/fila/recepcao/chamar`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({guiche})
+    });
+    if (res.status === 204) { alert('Fila vazia!'); return; }
+    const data = await res.json();
+    pacienteAtivoId = data.id;
+    document.getElementById('recSenhaAtiva').textContent = data.senha;
+    document.getElementById('recEspAtiva').textContent = data.especialidade || '';
+    document.getElementById('pacienteAtivoWrap').style.display = 'block';
+    toast('Chamando', data.senha, data.especialidade);
+    carregarFilaRecepcao();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function enviarConsultorio() {
+  if (!pacienteAtivoId) return;
+  const nome = document.getElementById('recNome').value.trim();
+  if (!nome) { alert('Informe o nome do paciente'); return; }
+  try {
+    const res = await fetch(`${API}/api/fila/${pacienteAtivoId}/consultorio`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        nomePaciente: nome,
+        cpf: document.getElementById('recCpf').value.trim() || null,
+        consultorio: document.getElementById('recConsultorio').value,
+        observacoes: document.getElementById('recObs').value.trim() || null
+      })
+    });
+    const data = await res.json();
+    toast('Enviado!', data.paciente?.nome || nome, data.consultorio);
+    limparRecepcao();
+    atualizar();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function marcarAusente() {
+  if (!pacienteAtivoId) return;
+  await fetch(`${API}/api/fila/${pacienteAtivoId}/finalizar`, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({status:'AUSENTE'})
+  });
+  limparRecepcao();
+  atualizar();
+}
+
+function limparRecepcao() {
+  pacienteAtivoId = null;
+  document.getElementById('pacienteAtivoWrap').style.display = 'none';
+  document.getElementById('recNome').value = '';
+  document.getElementById('recCpf').value = '';
+  document.getElementById('recObs').value = '';
+}
+
+// ==========================================
+// CONSULTÓRIO
+// ==========================================
+async function chamarProximoConsultorio() {
+  const esp = document.getElementById('consEsp').value;
+  try {
+    const res = await fetch(`${API}/api/fila/consultorio/chamar`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({especialidade: esp})
+    });
+    if (res.status === 204) { alert('Nenhum paciente na fila!'); return; }
+    const data = await res.json();
+    consAtivoId = data.id;
+    const nome = data.paciente?.nome || '—';
+    document.getElementById('consNomeAtivo').textContent = nome;
+    document.getElementById('consSenhaAtiva').textContent = data.senha + ' · ' + (data.consultorio || esp);
+    document.getElementById('consAtivoWrap').style.display = 'block';
+    // Atualiza último chamado no painel
+    document.getElementById('painelNomeConsultorio').textContent = nome;
+    document.getElementById('painelConsultorio').textContent = data.consultorio || esp;
+    atualizar();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function finalizarConsulta(status) {
+  if (!consAtivoId) return;
+  await fetch(`${API}/api/fila/${consAtivoId}/finalizar`, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({status})
+  });
+  consAtivoId = null;
+  document.getElementById('consAtivoWrap').style.display = 'none';
+  atualizar();
+}
+
+// ==========================================
+// CARREGAR DADOS
+// ==========================================
+async function carregarFilaRecepcao() {
+  try {
+    const res = await fetch(`${API}/api/fila/recepcao`);
+    const fila = await res.json();
+    renderFila(fila, 'recFilaLista', false);
+    renderFila(fila, 'filaRecepcao', false);
+    document.getElementById('sAguRecepcao').textContent = fila.length;
+  } catch {}
+}
+
+async function carregarFilaConsultorio() {
+  try {
+    const esp = modoAtual === 'consultorio' ? document.getElementById('consEsp')?.value : null;
+    const url = esp ? `${API}/api/fila/consultorio?especialidade=${encodeURIComponent(esp)}` : `${API}/api/fila/consultorio`;
+    const res = await fetch(url);
+    const fila = await res.json();
+    renderFila(fila, 'consFilaLista', true);
+    renderFila(fila, 'filaConsultorio', true);
+    document.getElementById('sAguConsultorio').textContent = fila.length;
+  } catch {}
 }
 
 async function carregarStats() {
   try {
     const res = await fetch(`${API}/api/fila/estatisticas`);
     const s = await res.json();
-    document.getElementById('statAguardando').textContent = s.aguardando ?? 0;
-    document.getElementById('statAtendendo').textContent  = s.emAtendimento ?? 0;
-    document.getElementById('statAtendidos').textContent  = s.atendidos ?? 0;
-    document.getElementById('statTempo').textContent      = s.tempoMedioEsperaMinutos ?? '—';
-    document.getElementById('totalAguardando').textContent = s.aguardando ?? 0;
+    document.getElementById('sAtendidos').textContent = s.atendidos ?? 0;
   } catch {}
 }
 
-function atualizar() { carregarFila(); carregarStats(); }
-setInterval(atualizar, 3000);
+function atualizar() {
+  carregarFilaRecepcao();
+  carregarFilaConsultorio();
+  carregarStats();
+}
+
+setInterval(atualizar, 4000);
 atualizar();
 
-async function realizarCheckin() {
-  const nome = document.getElementById('inputNome').value.trim();
-  if (!nome) { alert('Informe o nome do paciente'); return; }
-  const payload = {
-    nomePaciente: nome,
-    cpf: document.getElementById('inputCpf').value.trim() || null,
-    prioridade: document.getElementById('inputPrioridade').value,
-    especialidade: document.getElementById('inputEspecialidade').value,
-  };
-  try {
-    const res = await fetch(`${API}/api/fila/checkin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    mostrarToast(nome, data.senha, payload.prioridade);
-    document.getElementById('inputNome').value = '';
-    document.getElementById('inputCpf').value = '';
-    showTab('fila');
-    atualizar();
-  } catch(e) { alert('Erro ao fazer check-in: ' + e.message); }
-}
+// ==========================================
+// RENDER FILA
+// ==========================================
+const labels = {EMERGENCIA:'EMERG',URGENTE:'URG',PRIORITARIO:'PRIOR',NORMAL:'NORMAL'};
 
-async function chamarProximo() {
-  const guiche = document.getElementById('inputGuiche').value.trim();
-  if (!guiche) { alert('Informe o guichê'); return; }
-  const payload = { guiche, especialidade: document.getElementById('inputEspChamar').value || null };
-  try {
-    const res = await fetch(`${API}/api/fila/chamar`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 204) { alert('Fila vazia!'); return; }
-    const data = await res.json();
-    document.getElementById('senhaAtual').textContent = data.senha;
-    document.getElementById('guicheAtual').textContent = guiche;
-    showTab('fila');
-    atualizar();
-  } catch(e) { alert('Erro: ' + e.message); }
-}
-
-function renderFila(fila) {
-  const lista = document.getElementById('filaLista');
+function renderFila(fila, elId, mostrarNome) {
+  const el = document.getElementById(elId);
+  if (!el) return;
   if (!fila.length) {
-    lista.innerHTML = '<div class="fila-vazia">Nenhum paciente aguardando</div>';
+    el.innerHTML = '<div class="fila-vazia">Nenhum aguardando</div>';
     return;
   }
-  const labels = {EMERGENCIA:'EMERG',URGENTE:'URG',PRIORITARIO:'PRIOR',NORMAL:'NORMAL'};
-  lista.innerHTML = fila.map((item, i) => {
-    const nome = item.paciente?.nome || '—';
+  el.innerHTML = fila.map((item, i) => {
+    const nome = item.paciente?.nome || item.nomeTemp || '—';
+    const sub = mostrarNome ? (item.consultorio || item.especialidade || '') : (item.especialidade || '');
     return `<div class="fila-item">
-      <div class="pos">${i+1}</div>
-      <div>
-        <div class="item-nome">${nome}</div>
-        <div class="item-esp">${item.especialidade || 'Clínico Geral'}</div>
+      <div class="fila-pos">${i+1}</div>
+      <div class="fila-senha">${item.senha}</div>
+      <div class="fila-info">
+        <div class="fila-nome">${mostrarNome ? nome : (item.especialidade || '—')}</div>
+        <div class="fila-sub">${sub}</div>
       </div>
-      <div class="item-right">
-        <div class="item-senha">${item.senha}</div>
-        <div class="badge badge-${item.prioridade}">${labels[item.prioridade]||item.prioridade}</div>
-      </div>
+      <div class="badge badge-${item.prioridade}">${labels[item.prioridade]||''}</div>
     </div>`;
   }).join('');
 }
 
-function mostrarToast(nome, senha, prioridade) {
+// ==========================================
+// TOAST
+// ==========================================
+function toast(titulo, big, sub) {
   document.querySelector('.toast')?.remove();
   const t = document.createElement('div');
   t.className = 'toast';
-  t.innerHTML = `<div class="toast-titulo">Check-in realizado!</div>
-    <div class="toast-senha">${senha}</div>
-    <div class="toast-nome">${nome}</div>`;
+  t.innerHTML = `<div class="toast-title">${titulo}</div>
+    <div class="toast-big">${big}</div>
+    <div class="toast-sub">${sub||''}</div>`;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 5000);
 }
