@@ -145,14 +145,16 @@ public class FilaService {
     // CG001, OR001, PE001, CA001, EM001
     // ==========================================
     private String gerarSenha(String especialidade) {
-        String prefixo = switch (especialidade != null ? especialidade : "") {
-            case "Ortopedia" -> "OR";
-            case "Pediatria" -> "PE";
-            case "Cardiologia" -> "CA";
-            case "Emergência" -> "EM";
-            default -> "CG"; // Clínico Geral
+        String prefixo = switch (especialidade != null ? especialidade.trim() : "") {
+            case "Clínico Geral", "Clinico Geral", "CG" -> "CG";
+            case "Ortopedia",    "OR" -> "OR";
+            case "Pediatria",    "PE" -> "PE";
+            case "Cardiologia",  "CA" -> "CA";
+            case "Emergência", "Emergencia", "EM" -> "EM";
+            default -> "CG";
         };
-        long count = filaRepo.countSenhaHoje(prefixo) + 1;
+        Long total = filaRepo.countSenhaHoje(prefixo);
+        long count = (total != null ? total : 0L) + 1;
         return String.format("%s%03d", prefixo, count);
     }
 }
